@@ -2,6 +2,7 @@ import os
 import wfdb
 import matplotlib.pyplot as plt
 import numpy as np
+from collections import Counter
 
 files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
          115, 116, 117, 118, 119, 121, 122, 123, 124, 200, 201, 202, 203, 205,
@@ -55,11 +56,12 @@ def map_annotations(annotations, onehot=False):
             Y[i] = class_mapping[annotation]
     return Y
 
-def pad_beats(beats):
+def pad_beats(beats, pad_size=None):
     longest = max([x.shape[0] for x in beats])
-    X = np.empty((len(beats), longest), dtype='float32')
+    pad_size = longest if pad_size is None or pad_size < longest else pad_size
+    X = np.empty((len(beats), pad_size), dtype='float32')
     for i, beat in enumerate(beats):
-        X[i] = np.pad(beat[:, 0], (0, longest-beat.shape[0]), 'constant',
+        X[i] = np.pad(beat[:, 0], (0, pad_size-beat.shape[0]), 'constant',
                       constant_values=0)
     return X
 
@@ -75,25 +77,23 @@ def get_mitbih():
         annotations.extend(symbol)
     return beats, annotations
 
-def plot_record(path, sampto=None):
-    record = wfdb.rdrecord(path, sampto=sampto)
-    annotation = wfdb.rdann(path, 'atr', sampto=sampto)
-    wfdb.plot_wfdb(record=record, annotation=annotation, plot_sym=True,
-                   time_units='seconds', title='MIT-BIH Record 100',
-                   figsize=(10,4), ecg_grids='all')
 
-def plot(beat):
-    t = np.arange(beat.shape[0])
-    plt.plot(t, beat[:, 0])
-    plt.show()
 
-"""
+def get_class_weights(y):
+    pass
+
+
+
+
+def get_length_frequencies(X):
+    lengths = [x.shape[0] for x in X]
+    length_frequencies = Counter(lengths)
+    return length_frequencies.sorted(key=lambda pair: pair[0])
+
+
+
 if __name__ == '__main__':
     print('get')
     X, y = get_mitbih()
-    print('filter')
-    X, y = filter_beats(X, y, 1750)
-    print('pad')
-    X = pad_beats(X)
-    print(X)
-"""
+    c = Counter(y)
+    print(c)
