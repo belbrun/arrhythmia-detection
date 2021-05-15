@@ -1,6 +1,12 @@
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from data import filter_beats, pad_beats, get_mitbih, map_annotations
+from data import filter_beats, pad_beats, get_mitbih, map_annotations, denoise
+import torch.nn as nn
+import torch
+
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 class Baseline:
 
@@ -11,6 +17,7 @@ class Baseline:
 
     def preprocess(self, X, y):
         X, y = filter_beats(X, y, self.n_features)
+        X = denoise(X)
         return pad_beats(X, self.n_features), map_annotations(y)
 
     def fit(self, X, y):
@@ -28,6 +35,43 @@ class Baseline:
         print('scoring')
         print(self.svm.score(X, y))
 
+class RNN(nn.Module):
+
+    def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes):
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size,
+                          num_layers=num_layers, dropout=dropout)
+        self.fc = nn.Linear(hidden_size, n_classes)
+        self.activation = nn.Softmax()
+        self.loss = nn.BCELoss()
+
+    def forward(self, x):
+        batch_size = x.size()[0]
+        h0 = torch.zeros(self.num_layers, batch_size,
+                         self.hidden_size).requires_grad_().to(device)
+        #c0 = torch.zeros(self.num_layers, batch_size,
+        #                 self.hidden_size).requires_grad_().to(device)
+        x, _ = self.rnn(x, h0)
+        x = self.fc(x)
+        return self.activation(x)
+
+    def train_model(self, batch, optimizer):
+
+        self.train()
+        self.zero_grad()
+
+        x, y = batch
+        y_p = self(x.to(device))
+        loss = self.criterion(y_p, y)ž
+
+        loss.backward()
+        optimizer.step()
+
+        return loss.to('cpu').detach().item() 
+
+
+
 if __name__ == '__main__':
     X, y = get_mitbih()
     #X, y = X[:10000], y[:10000]
@@ -36,6 +80,6 @@ if __name__ == '__main__':
                                                         test_size=0.5,
                                                         stratify=y)
     #print(X_train)
-    bl = Baseline('rbf', 500)
+    bl = Baseline('rbf', 1000)
     bl.fit(X_train, y_train)
     bl.test(X_test, y_test)

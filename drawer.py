@@ -1,10 +1,13 @@
 import os
 import wfdb
+import numpy as np
 import matplotlib.pyplot as plt
 
-def plot(beat):
+def plot_beat(beat):
     t = np.arange(beat.shape[0])
-    plt.plot(t, beat[:, 0])
+    fig, axs = plt.subplots(2)
+    axs[0].plot(t, beat[:, 0])
+    axs[1].plot(t, beat[:, 1])
     plt.show()
 
 def plot_record(path, sampto=None):

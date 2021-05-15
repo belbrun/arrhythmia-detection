@@ -2,6 +2,8 @@ import os
 import wfdb
 import matplotlib.pyplot as plt
 import numpy as np
+import pywt
+import drawer
 from collections import Counter
 
 files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
@@ -65,6 +67,16 @@ def pad_beats(beats, pad_size=None):
                       constant_values=0)
     return X
 
+def denoise(X):
+    print('denoising')
+    X_denoised = []
+    for x in X:
+        thd = np.empty(x.shape)
+        thd[0] = pywt.threshold(x[0], np.median(x[0]), 'hard')
+        thd[1] = pywt.threshold(x[1], np.median(x[1]), 'hard')
+        X_denoised.append(thd)
+    return X_denoised
+
 
 def get_mitbih():
     dataset_path = os.path.join('dataset', 'mit-bih'    )
@@ -95,5 +107,7 @@ def get_length_frequencies(X):
 if __name__ == '__main__':
     print('get')
     X, y = get_mitbih()
+    drawer.plot_beat(denoise(X[:100])[50])
+    drawer.plot_beat(X[50])
     c = Counter(y)
     print(c)
