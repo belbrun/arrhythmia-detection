@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 import drawer
+from torch import Tensor
+from torch.utils.data import Dataset, DataLoader
 from collections import Counter
+from sklearn.model_selection import train_test_split
+
 
 files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
          115, 116, 117, 118, 119, 121, 122, 123, 124, 200, 201, 202, 203, 205,
@@ -13,7 +17,19 @@ files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
 
 class_mapping = {'R':0, 'L':1, 'Q':2, '|':3, 'N':4, 'A':5, 'J':6, 'f':7,
                  'x':8, 'S':9, 'j':10, 'e':11, 'E':12, 'a':13, '/':14, 'F':15,
-                 'V':16, }
+                 'V':16}
+
+class MITBIHDataset(Dataset):
+    def __init__(self, beats, annotations):
+        self.beats = beats
+        self.annotations = annotations
+
+    def __len__(self):
+        return len(self.beats)
+
+    def __getitem__(self, index):
+        return self.beats[index], self.annotations[index]
+
 
 def load_example(path):
     signal = wfdb.rdsamp(path, sampto=None)
@@ -58,6 +74,11 @@ def map_annotations(annotations, onehot=False):
             Y[i] = class_mapping[annotation]
     return Y
 
+def collate(batch):
+    print(len(batch))
+    X, y = batch
+    return Tensor(pad_beats(X)), map_annotations(y, onehot=True)
+
 def pad_beats(beats, pad_size=None):
     longest = max([x.shape[0] for x in beats])
     pad_size = longest if pad_size is None or pad_size < longest else pad_size
@@ -88,6 +109,29 @@ def get_mitbih():
         beats.extend(split_record(s[0], sample))
         annotations.extend(symbol)
     return beats, annotations
+
+def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
+    X, y = get_mitbih()
+    X_train, X_testvalid, y_train, y_testvalid = train_test_split(X, y,
+                                                                  train_size=\
+                                                                  ratios[0],
+                                                                  shuffle=True,
+                                                                  stratify=y)
+    print(len(X_testvalid), len(y_testvalid))
+    X_valid, X_test, y_valid, y_test = train_test_split(X_testvalid,
+                                                        y_testvalid,
+                                                        train_size=ratios[1]/\
+                                                        (ratios[1]+ratios[2]))
+
+    ds_train = MITBIHDataset(X_train, y_train)
+    ds_valid = MITBIHDataset(X_valid, y_valid)
+    ds_test = MITBIHDataset(X_test, y_test)
+
+    dl_train = DataLoader(ds_train, batch_size, shuffle, collate_fn=collate)
+    dl_valid = DataLoader(ds_valid, batch_size, shuffle, collate_fn=collate)
+    dl_test = DataLoader(ds_test, batch_size, shuffle, collate_fn=collate)
+
+    return dl_train, dl_valid, dl_test
 
 
 

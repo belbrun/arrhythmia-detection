@@ -38,6 +38,7 @@ class Baseline:
 class RNN(nn.Module):
 
     def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes):
+        super(RNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size,
@@ -63,12 +64,23 @@ class RNN(nn.Module):
 
         x, y = batch
         y_p = self(x.to(device))
-        loss = self.criterion(y_p, y)ž
+        loss = self.criterion(y_p, y)
 
         loss.backward()
         optimizer.step()
 
-        return loss.to('cpu').detach().item() 
+        return loss.to('cpu').detach().item()
+
+    def evaluate_model(self, batch):
+
+        self.eval()
+
+        x, y = batch
+        y_p = self(x.to(device))
+        loss = self.criterion(y_p, y)
+
+        return loss.to('cpu').detach().item()
+
 
 
 
