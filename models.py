@@ -41,20 +41,25 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size,
+        self.num_layers = num_layers
+        self.rnn = nn.GRU(input_size=input_size, hidden_size=hidden_size,
                           num_layers=num_layers, dropout=dropout)
-        self.fc = nn.Linear(hidden_size, n_classes)
-        self.activation = nn.Softmax()
-        self.loss = nn.BCELoss()
+        self.fc1 = nn.Linear(hidden_size, hidden_size//2)
+        self.fc2 = nn.Linear(hidden_size//2, n_classes)
+        self.activation = nn.Sigmoid()
+        self.softmax = nn.Softmax(dim=2)
+        self.criterion = nn.BCELoss()
+        self.to(device)
 
     def forward(self, x):
-        batch_size = x.size()[0]
+        batch_size = x.size()[1]
         h0 = torch.zeros(self.num_layers, batch_size,
                          self.hidden_size).requires_grad_().to(device)
         #c0 = torch.zeros(self.num_layers, batch_size,
         #                 self.hidden_size).requires_grad_().to(device)
-        x, _ = self.rnn(x, h0)
-        x = self.fc(x)
+        _, h = self.rnn(x, h0)
+        x = self.fc1(h)
+        x = self.fc2(x)
         return self.activation(x)
 
     def train_model(self, batch, optimizer):
@@ -63,8 +68,9 @@ class RNN(nn.Module):
         self.zero_grad()
 
         x, y = batch
-        y_p = self(x.to(device))
-        loss = self.criterion(y_p, y)
+        y_p = self(x)
+        #print(y_p)
+        loss = self.criterion(y_p.view(y_p.size()[1], y_p.size()[2]), y)
 
         loss.backward()
         optimizer.step()
@@ -76,10 +82,13 @@ class RNN(nn.Module):
         self.eval()
 
         x, y = batch
-        y_p = self(x.to(device))
-        loss = self.criterion(y_p, y)
+        y_p = self(x)
+        loss = self.criterion(y_p.view(y_p.size()[1], y_p.size()[2]), y)
 
         return loss.to('cpu').detach().item()
+
+    def measure(self, dataloader):
+        pass
 
 
 

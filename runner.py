@@ -12,28 +12,28 @@ def train_procedure(model, iterators, n_epochs, optimizer):
         for batch in train_it:
             loss = model.train_model(batch, optimizer)
             epoch_loss += loss
-        print('Epoch {} - train: {}'.format(i, epoch_loss))
+        print('Epoch {} - train: {}'.format(i, epoch_loss/(len(train_it)*train_it.batch_size)))
 
         epoch_loss = 0
         for batch in valid_it:
             loss = model.evaluate_model(batch)
             epoch_loss += loss
-        print('Epoch {} - validation: {}'.format(i, epoch_loss))
+        print('Epoch {} - validation: {}'.format(i, epoch_loss/(len(valid_it)*valid_it.batch_size)))
 
     test_loss = 0
     for batch in test_it:
         loss = model.evaluate_model(batch)
         test_loss += loss
-    print('Testing: {}')
+    print('Testing: {}'.format(epoch_loss/(len(test_it)*test_it.batch_size)))
 
 
 input_size = 2
-hidden_size = 10
+hidden_size = 100
 num_layers = 1
-dropout = 0
+dropout = 0.1
 n_classes = 17
 lr = 0.01
-batch_size = 16
+batch_size = 8
 n_epochs = 100
 
 def main():

@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 import drawer
-from torch import Tensor
-from torch.utils.data import Dataset, DataLoader
+import torch
+from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset, DataLoader, BatchSampler, RandomSampler
 from collections import Counter
 from sklearn.model_selection import train_test_split
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
          115, 116, 117, 118, 119, 121, 122, 123, 124, 200, 201, 202, 203, 205,
@@ -28,6 +30,12 @@ class MITBIHDataset(Dataset):
         return len(self.beats)
 
     def __getitem__(self, index):
+
+        if isinstance(index, list):
+            X = [torch.Tensor(self.beats[i]).to(device) for i in index]
+            y = [self.annotations[i] for i in index]
+            return X, y
+
         return self.beats[index], self.annotations[index]
 
 
@@ -75,9 +83,9 @@ def map_annotations(annotations, onehot=False):
     return Y
 
 def collate(batch):
-    print(len(batch))
-    X, y = batch
-    return Tensor(pad_beats(X)), map_annotations(y, onehot=True)
+    X, y = batch[0]
+    return pad_sequence(X, batch_first=False), \
+            torch.Tensor(map_annotations(y, onehot=True)).to(device)
 
 def pad_beats(beats, pad_size=None):
     longest = max([x.shape[0] for x in beats])
@@ -117,7 +125,6 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
                                                                   ratios[0],
                                                                   shuffle=True,
                                                                   stratify=y)
-    print(len(X_testvalid), len(y_testvalid))
     X_valid, X_test, y_valid, y_test = train_test_split(X_testvalid,
                                                         y_testvalid,
                                                         train_size=ratios[1]/\
@@ -127,9 +134,19 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
     ds_valid = MITBIHDataset(X_valid, y_valid)
     ds_test = MITBIHDataset(X_test, y_test)
 
-    dl_train = DataLoader(ds_train, batch_size, shuffle, collate_fn=collate)
-    dl_valid = DataLoader(ds_valid, batch_size, shuffle, collate_fn=collate)
-    dl_test = DataLoader(ds_test, batch_size, shuffle, collate_fn=collate)
+    sampler_train = BatchSampler(RandomSampler(ds_train), batch_size=batch_size,
+                           drop_last=False)
+    sampler_valid = BatchSampler(RandomSampler(ds_valid), batch_size=batch_size,
+                           drop_last=False)
+    sampler_test = BatchSampler(RandomSampler(ds_test), batch_size=batch_size,
+                           drop_last=False)
+
+    dl_train = DataLoader(ds_train, sampler=sampler_train,
+                          collate_fn=collate)
+    dl_valid = DataLoader(ds_valid, sampler=sampler_valid,
+                          collate_fn=collate)
+    dl_test = DataLoader(ds_test, batch_sampler=sampler_test,
+                          collate_fn=collate)
 
     return dl_train, dl_valid, dl_test
 
