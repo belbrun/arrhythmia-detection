@@ -5,6 +5,7 @@ import numpy as np
 import pywt
 import drawer
 import torch
+import time
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader, BatchSampler, RandomSampler
 from collections import Counter
@@ -37,6 +38,14 @@ class MITBIHDataset(Dataset):
             return X, y
 
         return self.beats[index], self.annotations[index]
+
+    def get_class_weights(self):
+        counts = Counter(self.annotations)
+        weights = np.empty(len(counts))
+        for c in counts:
+            weights[class_mapping[c]] = counts[c]
+        return counts.most_common(1)[0][1]/weights
+
 
 
 def load_example(path):
@@ -85,7 +94,7 @@ def map_annotations(annotations, onehot=False):
 def collate(batch):
     X, y = batch[0]
     return pad_sequence(X, batch_first=False), \
-            torch.Tensor(map_annotations(y, onehot=True)).to(device)
+            torch.LongTensor(map_annotations(y)).to(device)
 
 def pad_beats(beats, pad_size=None):
     longest = max([x.shape[0] for x in beats])
@@ -129,7 +138,6 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
                                                         y_testvalid,
                                                         train_size=ratios[1]/\
                                                         (ratios[1]+ratios[2]))
-
     ds_train = MITBIHDataset(X_train, y_train)
     ds_valid = MITBIHDataset(X_valid, y_valid)
     ds_test = MITBIHDataset(X_test, y_test)
@@ -146,15 +154,9 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
     dl_valid = DataLoader(ds_valid, sampler=sampler_valid,
                           collate_fn=collate)
     dl_test = DataLoader(ds_test, batch_sampler=sampler_test,
-                          collate_fn=collate)
+                      collate_fn=collate)
 
-    return dl_train, dl_valid, dl_test
-
-
-
-def get_class_weights(y):
-    pass
-
+    return (dl_train, dl_valid, dl_test), ds_train
 
 
 
@@ -163,12 +165,29 @@ def get_length_frequencies(X):
     length_frequencies = Counter(lengths)
     return length_frequencies.sorted(key=lambda pair: pair[0])
 
+def save_log(log):
+    with open('log{}.txt'.format(time.time()), 'w+') as text_file:
+        text_file.write('\n'.join(log))
+
+def parse_log(path):
+    with open(path, 'r') as text_file:
+        log = text_file.readlines()
+    train_loss, valid_loss, valid_acc = [], [], []
+    for line in log:
+        if line.startswith('Epoch') or line.startswith('Valid'):
+            parts = line.split(':')
+            if 'train' in parts[0]:
+                train_loss.append(float(parts[1]))
+            if 'validation' in parts[0]:
+                valid_loss.append(float(parts[1]))
+            if 'accuracy' in parts[0]:
+                valid_acc.append(float(parts[1]))
+    return train_loss, valid_loss, valid_acc
+
+
+
 
 
 if __name__ == '__main__':
-    print('get')
-    X, y = get_mitbih()
-    drawer.plot_beat(denoise(X[:100])[50])
-    drawer.plot_beat(X[50])
-    c = Counter(y)
-    print(c)
+    t, v, a = parse_log('state_dicts/model2log.txt')
+    drawer.plot_training(t, v, a)

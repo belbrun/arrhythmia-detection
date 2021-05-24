@@ -1,8 +1,10 @@
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from data import filter_beats, pad_beats, get_mitbih, map_annotations, denoise
+from torchmetrics import Accuracy
 import torch.nn as nn
 import torch
+
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -37,7 +39,8 @@ class Baseline:
 
 class RNN(nn.Module):
 
-    def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes):
+    def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes,
+                 weight):
         super(RNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -47,8 +50,9 @@ class RNN(nn.Module):
         self.fc1 = nn.Linear(hidden_size, hidden_size//2)
         self.fc2 = nn.Linear(hidden_size//2, n_classes)
         self.activation = nn.Sigmoid()
-        self.softmax = nn.Softmax(dim=2)
-        self.criterion = nn.BCELoss()
+        self.loss = nn.CrossEntropyLoss(weight=torch.Tensor(weight).to(device))
+        self.softmax = nn.Softmax(dim=1)
+        self.metric = Accuracy()
         self.to(device)
 
     def forward(self, x):
@@ -57,10 +61,13 @@ class RNN(nn.Module):
                          self.hidden_size).requires_grad_().to(device)
         #c0 = torch.zeros(self.num_layers, batch_size,
         #                 self.hidden_size).requires_grad_().to(device)
+        #_, (h, _) = self.rnn(x, (h0,c0))
         _, h = self.rnn(x, h0)
-        x = self.fc1(h)
+
+        x = self.fc1(h[-1])
+        x = self.activation(x)
         x = self.fc2(x)
-        return self.activation(x)
+        return x
 
     def train_model(self, batch, optimizer):
 
@@ -69,13 +76,17 @@ class RNN(nn.Module):
 
         x, y = batch
         y_p = self(x)
-        #print(y_p)
-        loss = self.criterion(y_p.view(y_p.size()[1], y_p.size()[2]), y)
+
+        #print(y_p.size())
+        loss = self.loss(y_p, y)
 
         loss.backward()
         optimizer.step()
 
         return loss.to('cpu').detach().item()
+
+    def classify(self, x):
+        return self.softmax(self(x))
 
     def evaluate_model(self, batch):
 
@@ -83,12 +94,19 @@ class RNN(nn.Module):
 
         x, y = batch
         y_p = self(x)
-        loss = self.criterion(y_p.view(y_p.size()[1], y_p.size()[2]), y)
+        loss = self.loss(y_p, y)
 
         return loss.to('cpu').detach().item()
 
     def measure(self, dataloader):
-        pass
+        self.metric.reset()
+        for batch in dataloader:
+            x, y = batch
+            y_p = self.classify(x)
+            #print(y_p)
+            acc = self.metric(y_p, y)
+        return self.metric.compute().to('cpu')
+
 
 
 
