@@ -1,0 +1,14 @@
+--modeldata-
+GRU: layer=1, hidden=100, dropout=0
+FC 50
+SIG
+FC 17
+SOFTMAX
+SGD: lr=0.01
+73 epochs
+batch=16
+-modeldata-
+
+Valid accuracy: 0.9751
+overwritten
+

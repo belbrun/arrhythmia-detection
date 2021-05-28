@@ -1,8 +1,9 @@
 -modeldata-
 GRU: layer=2, hidden=128, dropout=0.1
-FC 50
+FC 64
 SIG
 FC 17
+SOFTMAX
 Adagrad: lr=0.01
 80 epochs
 batch=4

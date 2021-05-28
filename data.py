@@ -3,9 +3,7 @@ import wfdb
 import matplotlib.pyplot as plt
 import numpy as np
 import pywt
-import drawer
 import torch
-import time
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader, BatchSampler, RandomSampler
 from collections import Counter
@@ -165,8 +163,8 @@ def get_length_frequencies(X):
     length_frequencies = Counter(lengths)
     return length_frequencies.sorted(key=lambda pair: pair[0])
 
-def save_log(log):
-    with open('log{}.txt'.format(time.time()), 'w+') as text_file:
+def save_log(log, path):
+    with open(path, 'w+') as text_file:
         text_file.write('\n'.join(log))
 
 def parse_log(path):
@@ -183,11 +181,3 @@ def parse_log(path):
             if 'accuracy' in parts[0]:
                 valid_acc.append(float(parts[1]))
     return train_loss, valid_loss, valid_acc
-
-
-
-
-
-if __name__ == '__main__':
-    t, v, a = parse_log('state_dicts/model2log.txt')
-    drawer.plot_training(t, v, a)
