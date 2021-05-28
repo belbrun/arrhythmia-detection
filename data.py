@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 import torch
+import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader, BatchSampler, RandomSampler
 from collections import Counter
@@ -11,25 +12,23 @@ from sklearn.model_selection import train_test_split
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-files = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114,
-         115, 116, 117, 118, 119, 121, 122, 123, 124, 200, 201, 202, 203, 205,
-         207, 208, 209, 210, 212, 213, 214, 215, 217, 219, 220, 221, 222, 223,
-         228, 230, 231, 232, 233, 234]
+
 
 class_mapping = {'R':0, 'L':1, 'Q':2, '|':3, 'N':4, 'A':5, 'J':6, 'f':7,
                  'x':8, 'S':9, 'j':10, 'e':11, 'E':12, 'a':13, '/':14, 'F':15,
                  'V':16}
 
-class MITBIHDataset(Dataset):
-    def __init__(self, beats, annotations):
-        self.beats = beats
-        self.annotations = annotations
+class ShaoxingDataset(Dataset):
+    def __init__(self, recordings, features, rhytms):
+        self.recordings = recordings
+        self.features = features
+        self.rhytms = rhytms
 
     def __len__(self):
-        return len(self.beats)
+        return len(self.recordings)
 
     def __getitem__(self, index):
-
+        #TODO
         if isinstance(index, list):
             X = [torch.Tensor(self.beats[i]).to(device) for i in index]
             y = [self.annotations[i] for i in index]
@@ -38,44 +37,20 @@ class MITBIHDataset(Dataset):
         return self.beats[index], self.annotations[index]
 
     def get_class_weights(self):
+        #TODO
         counts = Counter(self.annotations)
         weights = np.empty(len(counts))
         for c in counts:
             weights[class_mapping[c]] = counts[c]
         return counts.most_common(1)[0][1]/weights
 
+def load_diagnostics(path):
+    return pd.read_excel(os.path.join(path, 'Diagnostics.xlsx')) # move to caller method
 
 
-def load_example(path):
-    signal = wfdb.rdsamp(path, sampto=None)
-    annotation = wfdb.rdann(path, 'atr', sampto=None)
-    return signal, annotation
-
-def filter_annotations(sample, symbol):
-    filtered_symbol, filtered_sample = [], []
-    for i in range(len(symbol)):
-        if symbol[i] in class_mapping.keys():
-            filtered_sample.append(sample[i])
-            filtered_symbol.append(symbol[i])
-    return np.array(filtered_sample), filtered_symbol
-
-def split_record(signal, sample, max_len=1750):
-    beats = []
-    pos = sample[0]*4//5
-    for i in range(len(sample)-1):
-        diff = (sample[i+1]-sample[i])//5
-        beats.append(signal[pos: sample[i+1]-diff])
-        pos = sample[i+1] - diff
-    beats.append(signal[pos:])
-    return beats
-
-def filter_beats(beats, annotations, max_len):
-    to_filter = [i for i, x in enumerate(beats) if x.shape[0] > max_len]
-    to_filter.reverse()
-    for i in to_filter:
-        del beats[i]
-        del annotations[i]
-    return beats, annotations
+def load_recording(path):
+    recording = pd.read_csv(path, sep=',',header=None)
+    return recording.values
 
 def map_annotations(annotations, onehot=False):
     if onehot:
@@ -115,7 +90,7 @@ def denoise(X):
 
 
 def get_mitbih():
-    dataset_path = os.path.join('dataset', 'mit-bih'    )
+    dataset_path = os.path.join('dataset', 'mit-bih')
     beats, annotations = [], []
     for i in files:
         s, a = load_example(os.path.join(dataset_path, str(i)))
@@ -181,3 +156,6 @@ def parse_log(path):
             if 'accuracy' in parts[0]:
                 valid_acc.append(float(parts[1]))
     return train_loss, valid_loss, valid_acc
+
+if __name__ == '__main__':
+    
