@@ -47,7 +47,7 @@ def train_procedure(model, iterators, n_epochs, optimizer):
 
     return best_model, log
 
-model_name = 'model1'
+model_name = 'model1.8adgrd'
 dir = 'state_dicts'
 
 input_size = 2
@@ -56,14 +56,14 @@ num_layers = 1
 dropout = 0
 n_classes = 17
 lr = 0.01
-batch_size = 100
+batch_size = 8
 n_epochs = 100
 
 def train():
     iterators, dataset = data_loaders(batch_size)
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
                 dataset.get_class_weights())
-    optimizer = optim.SGD(model.parameters(), lr)
+    optimizer = optim.Adagrad(model.parameters(), lr)
     best_model, log = train_procedure(model, iterators, n_epochs, optimizer)
     save(best_model, join(dir, model_name + '.pt'))
     save_log(log, join(dir, 'log' + model_name[4:]))
