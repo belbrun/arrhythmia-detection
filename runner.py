@@ -47,16 +47,16 @@ def train_procedure(model, iterators, n_epochs, optimizer):
 
     return best_model, log
 
-model_name = 'model1.8adgrd'
+model_name = 'model2long'
 dir = 'state_dicts'
 
 input_size = 2
-hidden_size = 100
-num_layers = 1
-dropout = 0
+hidden_size = 128
+num_layers = 2
+dropout = 0.1
 n_classes = 17
 lr = 0.01
-batch_size = 8
+batch_size = 4
 n_epochs = 100
 
 def train():
