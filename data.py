@@ -51,9 +51,9 @@ def load_diagnostics(path):
     return pd.read_excel(os.path.join(path, 'Diagnostics.xlsx'))
 
 
-def load_recording(path):
-    recording = pd.read_csv(path, sep=',',header=None)
-    return recording.values[1:].astype('float32')
+def load_recording(path, n_leads=12):
+    recording = pd.read_csv(path, sep=',', header=0)
+    return recording.values[:, :n_leads].astype('float32').transpose()
 
 def map_annotations(annotations, onehot=False):
     if onehot:
@@ -75,15 +75,16 @@ def get_splits(dataset_path, include=['train', 'valid', 'test']):
     for split in include:
         with open(os.path.join(dataset_path, split+'_rec.txt'), 'r+') as text_file:
             splits.append(text_file.read().splitlines())
-    print(splits)
     return splits
 
-def get_dataset(split, dataset_path, diagnostics, onehot=True, denoised=False):
+def get_dataset(split, dataset_path, diagnostics, onehot=True, n_leads=12,
+                denoised=False):
     path = os.path.join(dataset_path, 'ECGDataDenoised' if denoised else 'ECGData')
     recordings = []
     for recording_path in split:
         recordings.append(load_recording(os.path.join(path,
-                                                      recording_path +'.csv')))
+                                                      recording_path +'.csv'),
+                                         n_leads))
 
     split = diagnostics.loc[diagnostics['FileName'].isin(split)]
     features = split[feature_columns]
@@ -96,7 +97,8 @@ def get_dataset(split, dataset_path, diagnostics, onehot=True, denoised=False):
 
 
 
-def data_loaders(batch_size, shuffle=True, include=['train', 'valid', 'test']):
+def data_loaders(batch_size, shuffle=True, include=['train', 'valid', 'test'],
+                 n_leads=12):
     dataset_path = os.path.join('dataset', '12lead')
     diagnostics = load_diagnostics(dataset_path)
     dss = []
@@ -153,7 +155,6 @@ def split_dataset(path, train_size=0.6):
     return x_train, x_valid, x_test, y_train, y_valid, y_test
 
 if __name__ == '__main__':
-    dl_test, ds_train = data_loaders(4, include=['test'])
-    print('loaded')
-    for i in dl_test[0]:
-        print(i)
+    dataset_path = os.path.join('dataset', '12lead', 'ECGData')
+    rec = load_recording(os.path.join(dataset_path, 'MUSE_20180111_155115_19000.csv'), 4)
+    print(rec.shape, rec)

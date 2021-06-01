@@ -1,10 +1,11 @@
-from data import data_loaders, save_log
-from models import RNN
+from data import data_loaders, save_log, get_splits, get_dataset, load_diagnostics
+from models import RNN, Baseline
 from torch import optim, save, load
 from torch.cuda import is_available
 from copy import deepcopy
 from os.path import join
 from datetime import datetime
+import numpy as np
 
 
 def train_procedure(model, iterators, n_epochs, optimizer):
@@ -48,6 +49,38 @@ def train_procedure(model, iterators, n_epochs, optimizer):
 
     return best_model, log
 
+
+def baseline():
+    dataset_path = join('dataset', '12lead')
+    diagnostics = load_diagnostics(dataset_path)
+    splits = get_splits(dataset_path)
+    train = get_dataset(splits[0]+splits[1],
+                        dataset_path,
+                        diagnostics,
+                        onehot=False,
+                        n_leads=1,
+                        denoised=True)
+    test = get_dataset(splits[2],
+                       dataset_path,
+                       diagnostics,
+                       onehot=False,
+                       n_leads=1,
+                       denoised=True)
+
+    X = np.array(train.recordings)
+    X = X.reshape((X.shape[0], X.shape[2]))
+    f = train.features
+    print(X.shape, f.shape)
+    X = np.concatenate((X[:, :1000], f), axis=1)
+    y = train.rhythms
+
+    model = Baseline('linear')
+    model.fit(X, y)
+    model.test(X, y)
+
+
+
+
 model_name = 'model1'
 dir = 'state_dicts'
 
@@ -78,9 +111,13 @@ def evaluate():
     print(model.measure(iterators[1]))
 
 
+
+
+
 def main():
-    print('Cuda available: ', is_available())
-    train()
+    baseline()
+    #print('Cuda available: ', is_available())
+    #train()
     #evaluate()
 
 if __name__ == '__main__':
