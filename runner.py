@@ -9,7 +9,8 @@ from datetime import datetime
 
 def train_procedure(model, iterators, n_epochs, optimizer):
 
-    log = [str(model.state_dict), 'Start time: ' + str(datetime.now())]
+    log = [str(model.state_dict), str(optimizer),
+           'Start time: ' + str(datetime.now())]
     train_it, valid_it, test_it = iterators
     max_accuracy = 0
     for i in range(n_epochs):
@@ -47,13 +48,13 @@ def train_procedure(model, iterators, n_epochs, optimizer):
 
     return best_model, log
 
-model_name = 'model2long'
+model_name = 'model3'
 dir = 'state_dicts'
 
 input_size = 2
-hidden_size = 128
-num_layers = 2
-dropout = 0.1
+hidden_size = 100
+num_layers = 1
+dropout = 0
 n_classes = 17
 lr = 0.01
 batch_size = 4

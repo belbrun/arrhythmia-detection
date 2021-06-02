@@ -20,6 +20,8 @@ class_mapping = {'R':0, 'L':1, 'Q':2, '|':3, 'N':4, 'A':5, 'J':6, 'f':7,
                  'x':8, 'S':9, 'j':10, 'e':11, 'E':12, 'a':13, '/':14, 'F':15,
                  'V':16}
 
+random_state = 42 # set to 42 to reproduce split used in the project
+
 class MITBIHDataset(Dataset):
     def __init__(self, beats, annotations):
         self.beats = beats
@@ -131,11 +133,15 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
                                                                   train_size=\
                                                                   ratios[0],
                                                                   shuffle=True,
-                                                                  stratify=y)
+                                                                  stratify=y,
+                                                                  random_state=\
+                                                                  random_state)
     X_valid, X_test, y_valid, y_test = train_test_split(X_testvalid,
                                                         y_testvalid,
                                                         train_size=ratios[1]/\
-                                                        (ratios[1]+ratios[2]))
+                                                        (ratios[1]+ratios[2]),
+                                                        random_state=\
+                                                        random_state)
     ds_train = MITBIHDataset(X_train, y_train)
     ds_valid = MITBIHDataset(X_valid, y_valid)
     ds_test = MITBIHDataset(X_test, y_test)

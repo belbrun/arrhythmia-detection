@@ -45,7 +45,7 @@ class RNN(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.rnn = nn.GRU(input_size=input_size, hidden_size=hidden_size,
+        self.rnn = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                           num_layers=num_layers, dropout=dropout)
         self.fc1 = nn.Linear(hidden_size, hidden_size//2)
         self.fc2 = nn.Linear(hidden_size//2, n_classes)
@@ -57,12 +57,8 @@ class RNN(nn.Module):
 
     def forward(self, x):
         batch_size = x.size()[1]
-        h0 = torch.zeros(self.num_layers, batch_size,
-                         self.hidden_size).requires_grad_().to(device)
-        #c0 = torch.zeros(self.num_layers, batch_size,
-        #                 self.hidden_size).requires_grad_().to(device)
-        #_, (h, _) = self.rnn(x, (h0,c0))
-        _, h = self.rnn(x, h0)
+        _, (h, _) = self.rnn(x)
+        #_, h = self.rnn(x, h0)
 
         x = self.fc1(h[-1])
         x = self.activation(x)
