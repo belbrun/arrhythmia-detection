@@ -32,20 +32,22 @@ class ShaoxingDataset(Dataset):
 
     def __getitem__(self, index):
         if isinstance(index, list):
-            X = [torch.Tensor(self.recordings[i]).to(device) for i in index]
+            X = torch.Tensor(self.recordings[index]).to(device)
             f = torch.Tensor(self.features[index]).to(device)
-            y = torch.Tensor(self.rhythms[index]).to(device)
+            y = torch.LongTensor(self.rhythms[index]).to(device)
             return X, f, y
 
         return self.recordings[index], self.features[index], self.rhythms[index]
 
     def get_class_weights(self):
-        counts = Counter(self.rhythms if self.rhythms.shape[1] == 1 else
-                         np.argmax(self.rhythms))
+        counts = Counter(self.rhythms.tolist() if len(self.rhythms.shape) == 1 else
+                         np.argmax(self.rhythms, axis=1).tolist())
         weights = np.empty(len(counts))
+        print(counts)
         for c in counts:
-            weights[class_mapping[c]] = counts[c]
-        return counts.most_common(1)[0][1]/weights
+            weights[c] = counts[c]
+        #return counts.most_common(1)[0][1]/weights
+        return self.rhythms.shape[0]/(len(class_mapping.keys())*weights)
 
 def load_diagnostics(path):
     return pd.read_excel(os.path.join(path, 'Diagnostics.xlsx'))
@@ -53,13 +55,13 @@ def load_diagnostics(path):
 
 def load_recording(path, n_leads=12):
     recording = pd.read_csv(path, sep=',', header=0)
-    return recording.values[:, :n_leads].astype('float32').transpose()
+    return recording.values[:, :n_leads].astype('float32')
 
 def map_annotations(annotations, onehot=False):
     if onehot:
         Y = np.zeros((len(annotations), len(class_mapping.keys())))
     else:
-        Y = np.empty(len(annotations))
+        Y = np.empty(len(annotations), dtype='int32')
     for i, annotation in enumerate(annotations):
         if onehot:
             Y[i, class_mapping[annotation]] = 1
@@ -77,7 +79,7 @@ def get_splits(dataset_path, include=['train', 'valid', 'test']):
             splits.append(text_file.read().splitlines())
     return splits
 
-def get_dataset(split, dataset_path, diagnostics, onehot=True, n_leads=12,
+def get_dataset(split, dataset_path, diagnostics, onehot=False, n_leads=12,
                 denoised=False):
     path = os.path.join(dataset_path, 'ECGDataDenoised' if denoised else 'ECGData')
     recordings = []
@@ -90,14 +92,14 @@ def get_dataset(split, dataset_path, diagnostics, onehot=True, n_leads=12,
     features = split[feature_columns]
     rhythms = split['Rhythm']
     features.loc[:, 'Gender'] = features['Gender'].apply(map_gender)
-    return ShaoxingDataset(recordings, features.values,
+    return ShaoxingDataset(np.array(recordings), features.values,
                            map_annotations(rhythms.values, onehot))
 
 
 
 
 
-def data_loaders(batch_size, shuffle=True, include=['train', 'valid', 'test'],
+def data_loaders(batch_size, include=['train', 'valid', 'test'],
                  n_leads=12):
     dataset_path = os.path.join('dataset', '12lead')
     diagnostics = load_diagnostics(dataset_path)
@@ -158,3 +160,7 @@ if __name__ == '__main__':
     dataset_path = os.path.join('dataset', '12lead', 'ECGData')
     rec = load_recording(os.path.join(dataset_path, 'MUSE_20180111_155115_19000.csv'), 4)
     print(rec.shape, rec)
+    diagnostics = load_diagnostics(os.path.join('dataset', '12lead'))
+    dataset = get_dataset(get_splits(os.path.join('dataset', '12lead'), ['test'])[0], os.path.join('dataset', '12lead'), diagnostics)
+    x, f, y =  dataset.__getitem__([1, 17, 32, 59, 19])
+    print(x.size())

@@ -54,7 +54,7 @@ def baseline():
     dataset_path = join('dataset', '12lead')
     diagnostics = load_diagnostics(dataset_path)
     splits = get_splits(dataset_path)
-    train = get_dataset(splits[0]+splits[1],
+    train = get_dataset(splits[1],
                         dataset_path,
                         diagnostics,
                         onehot=False,
@@ -70,37 +70,45 @@ def baseline():
     X = np.array(train.recordings)
     X = X.reshape((X.shape[0], X.shape[2]))
     f = train.features
-    print(X.shape, f.shape)
-    X = np.concatenate((X[:, :1000], f), axis=1)
-    y = train.rhythms
+    X_train = np.concatenate((X[:, :500], f), axis=1)
+    y_train = train.rhythms
+
+
+    X = np.array(test.recordings)
+    X = X.reshape((X.shape[0], X.shape[2]))
+    f = test.features
+    X_test = np.concatenate((X[:, :500], f), axis=1)
+    y_test = test.rhythms
 
     model = Baseline('linear')
-    model.fit(X, y)
-    model.test(X, y)
+    model.fit(X_train, y_train)
+    model.test(X_test, y_test)
 
 
 
 
-model_name = 'model1'
+model_name = 'model1adg'
 dir = 'state_dicts'
 
-input_size = 2
-hidden_size = 100
+input_size = 12
+hidden_size = 200
 num_layers = 1
 dropout = 0
-n_classes = 17
-lr = 0.01
-batch_size = 100
+n_classes = 11
+lr = 0.001
+batch_size = 4
 n_epochs = 100
+n_features = 0
 
 def train():
     iterators, dataset = data_loaders(batch_size)
+    print(dataset.get_class_weights())
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
-                dataset.get_class_weights())
-    optimizer = optim.SGD(model.parameters(), lr)
+                dataset.get_class_weights(), n_features)
+    optimizer = optim.Adagrad(model.parameters(), lr)
     best_model, log = train_procedure(model, iterators, n_epochs, optimizer)
     save(best_model, join(dir, model_name + '.pt'))
-    save_log(log, join(dir, 'log' + model_name[4:]))
+    save_log(log, join(dir, 'log' + model_name[4:] + '.txt'))
 
 def evaluate():
     iterators, dataset = data_loaders(batch_size)
@@ -115,10 +123,10 @@ def evaluate():
 
 
 def main():
-    baseline()
-    #print('Cuda available: ', is_available())
-    #train()
-    #evaluate()
+    #baseline()
+    print('Cuda available: ', is_available())
+    train()
+    evaluate()
 
 if __name__ == '__main__':
     main()

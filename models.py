@@ -27,31 +27,35 @@ class Baseline:
 class RNN(nn.Module):
 
     def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes,
-                 weight):
+                 weight, n_features):
         super(RNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.n_features = n_features
         self.num_layers = num_layers
         self.rnn = nn.GRU(input_size=input_size, hidden_size=hidden_size,
                           num_layers=num_layers, dropout=dropout)
-        self.fc1 = nn.Linear(hidden_size, hidden_size//2)
-        self.fc2 = nn.Linear(hidden_size//2, n_classes)
+        self.fc1 = nn.Linear(hidden_size+n_features, (hidden_size+n_features)//2)
+        self.fc2 = nn.Linear((hidden_size+n_features)//2, n_classes)
         self.activation = nn.Sigmoid()
         self.loss = nn.CrossEntropyLoss(weight=torch.Tensor(weight).to(device))
         self.softmax = nn.Softmax(dim=1)
         self.metric = Accuracy()
         self.to(device)
 
-    def forward(self, x):
+    def forward(self, x, f):
+        x = torch.reshape(x, (x.size()[2], x.size()[1], x.size()[3]))
         batch_size = x.size()[1]
-        h0 = torch.zeros(self.num_layers, batch_size,
-                         self.hidden_size).requires_grad_().to(device)
+        #h0 = torch.zeros(self.num_layers, batch_size,
+        #                 self.hidden_size).requires_grad_().to(device)
         #c0 = torch.zeros(self.num_layers, batch_size,
         #                 self.hidden_size).requires_grad_().to(device)
         #_, (h, _) = self.rnn(x, (h0,c0))
-        _, h = self.rnn(x, h0)
-
-        x = self.fc1(h[-1])
+        _, h = self.rnn(x)
+        #print(h.size(), f.size())
+        if self.n_features > 0:
+            h = torch.cat((h, f), 2)
+        x = self.fc1(h)
         x = self.activation(x)
         x = self.fc2(x)
         return x
@@ -61,37 +65,37 @@ class RNN(nn.Module):
         self.train()
         self.zero_grad()
 
-        x, y = batch
-        y_p = self(x)
+        x, f, y = batch
+        y_p = self(x, f)
 
-        #print(y_p.size())
-        loss = self.loss(y_p, y)
+        #print(torch.squeeze(y), y_p)
+        loss = self.loss(torch.squeeze(y_p), torch.squeeze(y))
 
         loss.backward()
         optimizer.step()
 
         return loss.to('cpu').detach().item()
 
-    def classify(self, x):
-        return self.softmax(self(x))
+    def classify(self, x, f):
+        return self.softmax(torch.squeeze(self(x, f), dim=0))
 
     def evaluate_model(self, batch):
 
         self.eval()
 
-        x, y = batch
-        y_p = self(x)
-        loss = self.loss(y_p, y)
+        x, f, y = batch
+        y_p = self(x, f)
+        #print(y_p.size(), y.size())
+        loss = self.loss(torch.squeeze(y_p, dim=0), torch.squeeze(y, dim=0))
 
         return loss.to('cpu').detach().item()
 
     def measure(self, dataloader):
         self.metric.reset()
         for batch in dataloader:
-            x, y = batch
-            y_p = self.classify(x)
-            #print(y_p)
-            acc = self.metric(y_p, y)
+            x, f, y = batch
+            y_p = self.classify(x, f)
+            acc = self.metric(y_p, torch.squeeze(y, dim=0))
         return self.metric.compute().to('cpu')
 
 

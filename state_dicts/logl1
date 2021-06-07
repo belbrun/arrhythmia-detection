@@ -1,0 +1,169 @@
+<bound method Module.state_dict of RNN(
+  (rnn): GRU(12, 200)
+  (fc1): Linear(in_features=213, out_features=106, bias=True)
+  (fc2): Linear(in_features=106, out_features=11, bias=True)
+  (activation): Sigmoid()
+  (loss): CrossEntropyLoss()
+  (softmax): Softmax(dim=1)
+  (metric): Accuracy()
+)>
+SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0
+    nesterov: False
+    weight_decay: 0
+)
+Start time: 2021-06-05 14:42:20.986903
+Epoch 0 - train: 1.965147383674354
+Epoch 0 - validation: 1.7990963653596659
+Valid accuracy: 0.5448567271232605
+Epoch 1 - train: 1.7602134930318643
+Epoch 1 - validation: 1.732075572572998
+Valid accuracy: 0.5509628653526306
+Epoch 2 - train: 1.6966946097411584
+Epoch 2 - validation: 1.701837257529289
+Valid accuracy: 0.5425082445144653
+Epoch 3 - train: 1.6650619609473867
+Epoch 3 - validation: 1.6033163940705233
+Valid accuracy: 0.6449037194252014
+Epoch 4 - train: 1.6353875778582818
+Epoch 4 - validation: 1.610573535676745
+Valid accuracy: 0.701268196105957
+Epoch 5 - train: 1.6392412451407874
+Epoch 5 - validation: 1.7030246262255126
+Valid accuracy: 0.5124471783638
+Epoch 6 - train: 1.5960097024421358
+Epoch 6 - validation: 1.6340889947499389
+Valid accuracy: 0.6312822699546814
+Epoch 7 - train: 1.5796718545533301
+Epoch 7 - validation: 1.638463168944919
+Valid accuracy: 0.593705952167511
+Epoch 8 - train: 1.59576870417998
+Epoch 8 - validation: 1.642053756212875
+Valid accuracy: 0.5575387477874756
+Epoch 9 - train: 1.5929270369154107
+Epoch 9 - validation: 1.633130635374259
+Valid accuracy: 0.6242367029190063
+Epoch 10 - train: 1.6618341183617626
+Epoch 10 - validation: 1.715390290149381
+Valid accuracy: 0.5857210159301758
+Epoch 11 - train: 1.6689022286056203
+Epoch 11 - validation: 1.6606293997218864
+Valid accuracy: 0.6655706763267517
+Epoch 12 - train: 1.6618477489027144
+Epoch 12 - validation: 1.6718118644789504
+Valid accuracy: 0.6444340348243713
+Epoch 13 - train: 1.6485464022393963
+Epoch 13 - validation: 1.754750066022712
+Valid accuracy: 0.4753405451774597
+Epoch 14 - train: 1.6261212423807692
+Epoch 14 - validation: 1.6307278860353396
+Valid accuracy: 0.5838421583175659
+Epoch 15 - train: 1.6007201291653388
+Epoch 15 - validation: 1.5390393415266757
+Valid accuracy: 0.7059652209281921
+Epoch 16 - train: 1.5746473860725732
+Epoch 16 - validation: 1.5116254967999057
+Valid accuracy: 0.6843588352203369
+Epoch 17 - train: 1.5552350472269314
+Epoch 17 - validation: 1.656184642220975
+Valid accuracy: 0.3940817415714264
+Epoch 18 - train: 1.5617099834667867
+Epoch 18 - validation: 1.4579128824300212
+Valid accuracy: 0.6730859279632568
+Epoch 19 - train: 1.5600517634010793
+Epoch 19 - validation: 1.698337222577036
+Valid accuracy: 0.5406293869018555
+Epoch 20 - train: 1.5679329152620802
+Epoch 20 - validation: 1.4588651516759596
+Valid accuracy: 0.5641146302223206
+Epoch 21 - train: 1.590156729660261
+Epoch 21 - validation: 1.5614541404466469
+Valid accuracy: 0.6472522020339966
+Epoch 22 - train: 1.5955239960978609
+Epoch 22 - validation: 1.5687677134492384
+Valid accuracy: 0.5650539994239807
+Epoch 23 - train: 1.5834749687367404
+Epoch 23 - validation: 1.6098093942898075
+Valid accuracy: 0.5138562917709351
+Epoch 24 - train: 1.5758173803500855
+Epoch 24 - validation: 1.630248494264556
+Valid accuracy: 0.5716298818588257
+Epoch 25 - train: 1.6115315725972075
+Epoch 25 - validation: 1.6377326552013518
+Valid accuracy: 0.48896196484565735
+Epoch 26 - train: 1.6230503416240551
+Epoch 26 - validation: 1.6061624893551696
+Valid accuracy: 0.5674025416374207
+Epoch 27 - train: 1.6236031811985285
+Epoch 27 - validation: 1.65541082039112
+Valid accuracy: 0.49365898966789246
+Epoch 28 - train: 1.5933040225961168
+Epoch 28 - validation: 1.5918643793290372
+Valid accuracy: 0.6077970862388611
+Epoch 29 - train: 1.5923276270413742
+Epoch 29 - validation: 1.5732817104117731
+Valid accuracy: 0.6120244264602661
+Epoch 30 - train: 1.587343810570561
+Epoch 30 - validation: 1.5961764904392592
+Valid accuracy: 0.600281834602356
+Epoch 31 - train: 1.571819889224464
+Epoch 31 - validation: 1.5387279538902512
+Valid accuracy: 0.5969939231872559
+Epoch 32 - train: 1.6402470360491972
+Epoch 32 - validation: 1.6042028116464166
+Valid accuracy: 0.6627524495124817
+Epoch 33 - train: 1.6637567115262963
+Epoch 33 - validation: 1.6950450440061473
+Valid accuracy: 0.592296838760376
+Epoch 34 - train: 1.6456725616416263
+Epoch 34 - validation: 1.655539362783951
+Valid accuracy: 0.5349929332733154
+Epoch 35 - train: 1.6239761532510006
+Epoch 35 - validation: 1.6478046140796025
+Valid accuracy: 0.600281834602356
+Epoch 36 - train: 1.6239227583875637
+Epoch 36 - validation: 1.875438992346429
+Valid accuracy: 0.2353217452764511
+Epoch 37 - train: 1.6340866017207252
+Epoch 37 - validation: 1.557914056988192
+Valid accuracy: 0.6566463112831116
+Epoch 38 - train: 1.6384292190793013
+Epoch 38 - validation: 1.5569394371746628
+Valid accuracy: 0.6510098576545715
+Epoch 39 - train: 1.6239487531786796
+Epoch 39 - validation: 1.5570200774504142
+Valid accuracy: 0.6026303172111511
+Epoch 40 - train: 1.6220956168550957
+Epoch 40 - validation: 1.5374120960316113
+Valid accuracy: 0.6604039669036865
+Epoch 41 - train: 1.5883651701599342
+Epoch 41 - validation: 1.6362175803918104
+Valid accuracy: 0.5335838198661804
+Epoch 42 - train: 1.6222090331852697
+Epoch 42 - validation: 1.6483674281980933
+Valid accuracy: 0.5265382528305054
+Epoch 43 - train: 1.5895100271582379
+Epoch 43 - validation: 1.6683053809303727
+Valid accuracy: 0.5227806568145752
+Epoch 44 - train: 1.5629554682212392
+Epoch 44 - validation: 1.5694299781971086
+Valid accuracy: 0.6331611275672913
+Epoch 45 - train: 1.578383072286975
+Epoch 45 - validation: 1.7005288442125017
+Valid accuracy: 0.49224987626075745
+Epoch 46 - train: 1.5663191666622496
+Epoch 46 - validation: 1.4647317291648034
+Valid accuracy: 0.704086422920227
+Epoch 47 - train: 1.542219956628815
+Epoch 47 - validation: 1.5153122434696606
+Valid accuracy: 0.6247064471244812
+Epoch 48 - train: 1.5548276920466402
+Epoch 48 - validation: 1.4961696512591771
+Valid accuracy: 0.6162517666816711
+Epoch 49 - train: 1.5568578655300247
+Epoch 49 - validation: 1.6206278715974618
+Valid accuracy: 0.5603569746017456
+End time: 2021-06-05 19:48:39.699487
