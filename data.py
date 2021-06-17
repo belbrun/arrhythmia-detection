@@ -180,6 +180,13 @@ def split_dataset(path, train_size=0.6):
                                                         stratify=y_validtest)
     return x_train, x_valid, x_test, y_train, y_valid, y_test
 
+def get_class_counts(path):
+    diagnostics = load_diagnostics(path)
+    recording_paths = diagnostics['FileName']
+    rhythms = diagnostics['Rhythm']
+    return Counter(rhythms)
+
+
 if __name__ == '__main__':
     dataset_path = os.path.join('dataset', '12lead', 'ECGData')
     rec = load_recording(os.path.join(dataset_path, 'MUSE_20180111_155115_19000.csv'), 4)
