@@ -61,7 +61,7 @@ def filter_annotations(sample, symbol):
             filtered_symbol.append(symbol[i])
     return np.array(filtered_sample), filtered_symbol
 
-def split_record(signal, sample, max_len=1750):
+def split_record(signal, sample):
     beats = []
     pos = sample[0]*4//5
     for i in range(len(sample)-1):
@@ -70,6 +70,13 @@ def split_record(signal, sample, max_len=1750):
         pos = sample[i+1] - diff
     beats.append(signal[pos:])
     return beats
+
+def get_split_positions(signal, sample):
+    positions = [sample[0]*4//5]
+    for i in range(len(sample)-1):
+        diff = (sample[i+1]-sample[i])//5
+        positions.append(sample[i+1] - diff)
+    return positions
 
 def filter_beats(beats, annotations, max_len):
     to_filter = [i for i, x in enumerate(beats) if x.shape[0] > max_len]
@@ -167,7 +174,14 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
 def get_length_frequencies(X):
     lengths = [x.shape[0] for x in X]
     length_frequencies = Counter(lengths)
-    return length_frequencies.sorted(key=lambda pair: pair[0])
+    return sorted(length_frequencies, key=lambda x: x)
+
+def get_record(path):
+    s, a = load_example(os.path.join(path))
+    sample, symbol = filter_annotations(a.sample,
+                                        a.symbol)
+    return s[0], sample
+
 
 def save_log(log, path):
     with open(path, 'w+') as text_file:
