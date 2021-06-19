@@ -117,12 +117,14 @@ def train():
     save_log(log, join(dir, 'log' + model_name[4:] + '.txt'))
 
 def evaluate():
-    iterators, dataset = data_loaders(batch_size, denoised=False)
-    model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
-                dataset.get_class_weights())
-    model.load_state_dict(join(dir, model_name + '.pt'))
+    iterators, dataset = data_loaders(batch_size, denoised=denoised,
+                                      merged=merged)
+    class_weights = dataset.get_class_weights()
+    model = RNN(input_size, hidden_size, num_layers, dropout, len(class_weights),
+                class_weights, n_features)
+    model.load_state_dict(load(join(dir, model_name + '.pt')))
     print(model.state_dict)
-    print(model.measure(iterators[1]))
+    print(model.measure(iterators[2]))
 
 
 
@@ -131,7 +133,7 @@ def evaluate():
 def main():
     #baseline()
     print('Cuda available: ', is_available())
-    train()
+    #train()
     evaluate()
 
 if __name__ == '__main__':

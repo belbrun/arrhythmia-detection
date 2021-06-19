@@ -1,6 +1,6 @@
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from torchmetrics import Accuracy
+from ignite.metrics.confusion_matrix import ConfusionMatrix #import ClassificationReport
 import torch.nn as nn
 import torch
 
@@ -41,7 +41,7 @@ class RNN(nn.Module):
         self.activation = nn.Tanh()
         self.loss = nn.CrossEntropyLoss(weight=torch.Tensor(weight).to(device))
         self.softmax = nn.Softmax(dim=1)
-        self.metric = Accuracy()
+        self.metric = ConfusionMatrix(n_classes)
         self.to(device)
 
     def forward(self, x, f):
@@ -103,7 +103,7 @@ class RNN(nn.Module):
             y_p = self.classify(x, f)
             #print(y_p, y)
 
-            acc = self.metric(y_p, torch.squeeze(y, dim=0))
+            self.metric.update((y_p, torch.squeeze(y, dim=0)))
         return self.metric.compute().to('cpu')
 
 
