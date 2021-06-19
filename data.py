@@ -106,7 +106,7 @@ def collate(batch):
 def pad_beats(beats, pad_size=None):
     longest = max([x.shape[0] for x in beats])
     pad_size = longest if pad_size is None or pad_size < longest else pad_size
-    X = np.empty((len(beats), pad_size), dtype='float32')
+    X = np.empty((len(beats), pad_size), dtype='float')
     for i, beat in enumerate(beats):
         X[i] = np.pad(beat[:, 0], (0, pad_size-beat.shape[0]), 'constant',
                       constant_values=0)

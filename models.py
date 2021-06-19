@@ -1,9 +1,11 @@
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 from data import filter_beats, pad_beats, get_mitbih, map_annotations, denoise
 from torchmetrics import Accuracy
 import torch.nn as nn
 import torch
+import numpy as np
 
 
 
@@ -19,7 +21,7 @@ class Baseline:
 
     def preprocess(self, X, y):
         X, y = filter_beats(X, y, self.n_features)
-        X = denoise(X)
+        #X = denoise(X)
         return pad_beats(X, self.n_features), map_annotations(y)
 
     def fit(self, X, y):
@@ -35,7 +37,8 @@ class Baseline:
         if self.use_preprocessing:
             X, y = self.preprocess(X, y)
         print('scoring')
-        print(self.svm.score(X, y))
+        print(classification_report(y, self.svm.predict(X)))
+
 
 class RNN(nn.Module):
 
@@ -112,8 +115,12 @@ if __name__ == '__main__':
     #X, y = X[:10000], y[:10000]
     print('split    ')
     X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                                        test_size=0.5,
-                                                        stratify=y)
+                                                        test_size=0.4,
+                                                        stratify=y,
+                                                        random_state=42)
+    _, X_test, _, y_test = train_test_split(X_test, y_test,
+                                            test_size=0.5,
+                                            random_state=42)
     #print(X_train)
     bl = Baseline('rbf', 1000)
     bl.fit(X_train, y_train)
