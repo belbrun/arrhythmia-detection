@@ -91,14 +91,14 @@ def baseline():
 
 
 
-model_name = 'model5tanh'
+model_name = 'model5relu'
 dir = 'state_dicts'
 
 input_size = 12
 hidden_size = 128
 num_layers = 2
 dropout = 0.1
-lr = 0.001
+lr = 0.01
 batch_size = 8
 n_epochs = 100
 n_features = 13
@@ -133,7 +133,7 @@ def evaluate():
 def main():
     #baseline()
     print('Cuda available: ', is_available())
-    #train()
+    train()
     evaluate()
 
 if __name__ == '__main__':
