@@ -1,0 +1,26 @@
+model1cpy
+
+Macros:  [tensor(0.4368, dtype=torch.float64), tensor(0.6255, dtype=torch.float64), tensor(0.4879, dtype=torch.float64)]
+Weighted:  [tensor(0.8343, dtype=torch.float64), tensor(0.8680, dtype=torch.float64), tensor(0.8450, dtype=torch.float64)]
+Accuracy:  0.9240575487160808
+
+model1.1
+
+Macros:  [tensor(0.4971, dtype=torch.float64), tensor(0.5908, dtype=torch.float64), tensor(0.5280, dtype=torch.float64)]
+Weighted:  [tensor(0.8223, dtype=torch.float64), tensor(0.8720, dtype=torch.float64), tensor(0.8435, dtype=torch.float64)]
+Accuracy:  0.9509196867601529
+
+model 1.8
+Macros:  [tensor(0.6519, dtype=torch.float64), tensor(0.7717, dtype=torch.float64), tensor(0.6957, dtype=torch.float64)]
+Weighted:  [tensor(0.9014, dtype=torch.float64), tensor(0.9476, dtype=torch.float64), tensor(0.9139, dtype=torch.float64)]
+Accuracy:  0.9750956109998179
+
+model 2
+Macros:  [tensor(0.6947, dtype=torch.float64), tensor(0.7170, dtype=torch.float64), tensor(0.7026, dtype=torch.float64)]
+Weighted:  [tensor(0.9177, dtype=torch.float64), tensor(0.9227, dtype=torch.float64), tensor(0.9190, dtype=torch.float64)]
+Accuracy:  0.9846111819340739
+
+model2long
+Macros:  [tensor(0.7081, dtype=torch.float64), tensor(0.7015, dtype=torch.float64), tensor(0.6876, dtype=torch.float64)]
+Weighted:  [tensor(0.9340, dtype=torch.float64), tensor(0.9032, dtype=torch.float64), tensor(0.9025, dtype=torch.float64)]
+Accuracy:  0.9834274266982335

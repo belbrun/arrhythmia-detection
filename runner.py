@@ -5,6 +5,7 @@ from torch.cuda import is_available
 from copy import deepcopy
 from os.path import join
 from datetime import datetime
+from collections import Counter
 
 
 def train_procedure(model, iterators, n_epochs, optimizer):
@@ -27,7 +28,7 @@ def train_procedure(model, iterators, n_epochs, optimizer):
             loss = model.evaluate_model(batch)
             epoch_loss += loss
         log.append('Epoch {} - validation: {}'.format(i, epoch_loss/(len(valid_it)*valid_it.batch_size)))
-        accuracy = model.measure(valid_it)
+        _, _, _, accuracy = model.measure(valid_it)
         if accuracy > max_accuracy:
             max_accuracy = accuracy
             best_model = deepcopy(model.state_dict())
@@ -36,7 +37,7 @@ def train_procedure(model, iterators, n_epochs, optimizer):
     log.append('End time: ' + str(datetime.now()))
 
 
-    """test_loss = 0
+    test_loss = 0
     for batch in test_it:
         print(batch)
         loss = model.evaluate_model(batch)
@@ -48,12 +49,12 @@ def train_procedure(model, iterators, n_epochs, optimizer):
 
     return best_model, log
 
-model_name = 'model3'
+model_name = 'model2long'
 dir = 'state_dicts'
 
 input_size = 2
-hidden_size = 100
-num_layers = 1
+hidden_size = 128
+num_layers = 2
 dropout = 0
 n_classes = 17
 lr = 0.01
@@ -61,27 +62,42 @@ batch_size = 4
 n_epochs = 100
 
 def train():
-    iterators, dataset = data_loaders(batch_size)
+    iterators, datasets = data_loaders(batch_size)
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
                 dataset.get_class_weights())
+    dataset = datasets[0]
     optimizer = optim.Adagrad(model.parameters(), lr)
     best_model, log = train_procedure(model, iterators, n_epochs, optimizer)
     save(best_model, join(dir, model_name + '.pt'))
     save_log(log, join(dir, 'log' + model_name[4:]))
 
 def evaluate():
-    iterators, dataset = data_loaders(batch_size)
+    iterators, datasets = data_loaders(batch_size)
+    dataset = datasets[0]
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
                 dataset.get_class_weights())
-    model.load_state_dict(join(dir, model_name + '.pt'))
+    model.load_state_dict(load(join(dir, model_name + '.pt')))
     print(model.state_dict)
-    print(model.measure(iterators[1]))
+    precision, recall, f1, accuracy = model.measure(iterators[2])
+    counts = list(Counter(datasets[2].annotations).values())
+    overall = sum(counts)
+    macros = [x.sum()/x.size()[0] for x in [precision, recall, f1]]
+    print('Macros: ', macros)
+    weighted = []
+    for metric in [precision, recall, f1]:
+        value = 0
+        for i in range(metric.size()[0]):
+            value += counts[i]/overall*metric[i]
+        weighted.append(value)
+    print('Weighted: ', weighted)
+    print('Accuracy: ', accuracy)
+
 
 
 def main():
-    print('Cuda available: ', is_available())
-    train()
-    #evaluate()
+    #print('Cuda available: ', is_available())
+    #train()
+    evaluate()
 
 if __name__ == '__main__':
     main()

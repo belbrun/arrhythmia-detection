@@ -3,6 +3,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from data import filter_beats, pad_beats, get_mitbih, map_annotations, denoise
 from torchmetrics import Accuracy
+from ignite.metrics import Fbeta, Accuracy
+from ignite.metrics.precision import Precision
+from ignite.metrics.recall import Recall
 import torch.nn as nn
 import torch
 import numpy as np
@@ -48,20 +51,25 @@ class RNN(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.rnn = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
+        self.rnn = nn.GRU(input_size=input_size, hidden_size=hidden_size,
                           num_layers=num_layers, dropout=dropout)
         self.fc1 = nn.Linear(hidden_size, hidden_size//2)
         self.fc2 = nn.Linear(hidden_size//2, n_classes)
         self.activation = nn.Sigmoid()
         self.loss = nn.CrossEntropyLoss(weight=torch.Tensor(weight).to(device))
         self.softmax = nn.Softmax(dim=1)
-        self.metric = Accuracy()
+        self.precision = Precision(average=False)
+        self.recall = Recall(average=False)
+        self.f1 = Fbeta(beta=1, average=False, precision=self.precision,
+                        recall=self.recall)
+        self.accuracy = Accuracy()
+        self.metrics = [self.precision, self.recall, self.f1, self.accuracy]
         self.to(device)
 
     def forward(self, x):
         batch_size = x.size()[1]
-        _, (h, _) = self.rnn(x)
-        #_, h = self.rnn(x, h0)
+        #_, (h, _) = self.rnn(x)
+        _, h = self.rnn(x)
 
         x = self.fc1(h[-1])
         x = self.activation(x)
@@ -98,13 +106,14 @@ class RNN(nn.Module):
         return loss.to('cpu').detach().item()
 
     def measure(self, dataloader):
-        self.metric.reset()
+        for metric in self.metrics:
+            metric.reset()
         for batch in dataloader:
             x, y = batch
             y_p = self.classify(x)
-            #print(y_p)
-            acc = self.metric(y_p, y)
-        return self.metric.compute().to('cpu')
+            for metric in self.metrics:
+                metric.update((y_p, y))
+        return [metric.compute() for metric in self.metrics]
 
 
 

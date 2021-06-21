@@ -149,7 +149,17 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
                                                         (ratios[1]+ratios[2]),
                                                         random_state=\
                                                         random_state)
-    ds_train = MITBIHDataset(X_train, y_train)
+
+    dss = [MITBIHDataset(X, y) for X, y in [(X_train, y_train),
+                                            (X_valid, y_valid),
+                                            (X_test, y_test)]]
+
+    samplers = [BatchSampler(RandomSampler(ds), batch_size=batch_size,
+                           drop_last=False) for ds in dss]
+
+    dls = [DataLoader(dss[i], sampler=sampler, collate_fn=collate)
+           for i, sampler in enumerate(samplers)]
+    """ds_train = MITBIHDataset(X_train, y_train)
     ds_valid = MITBIHDataset(X_valid, y_valid)
     ds_test = MITBIHDataset(X_test, y_test)
 
@@ -165,10 +175,9 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
     dl_valid = DataLoader(ds_valid, sampler=sampler_valid,
                           collate_fn=collate)
     dl_test = DataLoader(ds_test, batch_sampler=sampler_test,
-                      collate_fn=collate)
+                      collate_fn=collate)"""
 
-    return (dl_train, dl_valid, dl_test), ds_train
-
+    return dls, dss   
 
 
 def get_length_frequencies(X):

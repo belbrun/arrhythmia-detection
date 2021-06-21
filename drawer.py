@@ -30,12 +30,15 @@ def plot_splits(axis, positions):
         plt.axvline(position, color='red')
 
 def plot_training(train_loss, valid_loss, valid_acc):
+    sns.set_theme(style="darkgrid")
     e = range(len(train_loss))
-    fig, axs = plt.subplots(3)
-    axs[0].plot(e, train_loss)
-    axs[1].plot(e, valid_loss)
-    axs[2].plot(e, valid_acc)
-    plt.show()
+    data = pd.DataFrame({'Epoha': e, 'Skup za treniranje': train_loss,
+            'Skup za validaciju': valid_loss})
+    #print(data)
+    ax = sns.lineplot(x='Epoha', y='value', hue='Skup',
+                      legend='full', data=pd.melt(data, ['Epoha'], var_name='Skup'))
+    ax.set_xlabel('Epoha')
+    ax.set_ylabel('Gubitak')
 
 def plot_counts(annotations):
     #counts = [[key, counts[key]] for key in counts.keys()]
@@ -55,8 +58,9 @@ def plot_lengths(lengths):
 
 
 if __name__ == '__main__':
-    #t, v, a = data.parse_log('state_dicts/log1.1.txt')
-    #plot_training(t, v, a)
+    t, v, a = data.parse_log('state_dicts/log2.txt')
+    plot_training(t, v, a)
+    plt.show()
     #beat = data.get_mitbih()[0][5]
     #plot_beat(beat)
 
@@ -72,7 +76,7 @@ if __name__ == '__main__':
     #plot_counts({'annotations': annotations})
     #plt.show()
 
-    records, _ = data.get_mitbih()
-    lengths = [x for x in data.get_length_frequencies(records) if x < 2000]
-    plot_lengths({'Duljina otkucaja': lengths})
-    plt.show()
+    #records, _ = data.get_mitbih()
+    #lengths = [x for x in data.get_length_frequencies(records) if x < 2000]
+    #plot_lengths({'Duljina otkucaja': lengths})
+    #plt.show()
