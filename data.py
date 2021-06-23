@@ -334,10 +334,36 @@ def get_length_frequencies(X):
     return length_frequencies.sorted(key=lambda pair: pair[0])
 
 def save_log(log, path):
+    """
+        Saves a log to a path.
+
+        Parameters
+        ----------
+        log: list[str]
+            List of log entries.
+        path:
+            Path to save the log to, includes the name.
+    """
     with open(path, 'w+') as text_file:
         text_file.write('\n'.join(log))
 
 def parse_log(path):
+     """
+        Parses a log loaded from a path.
+        Extracts values of training and validation loss, and validation accuracy
+        over epochs.
+
+        Parameters
+        ----------
+        path:
+            Path to save the log to, includes the name.
+
+        Returns
+        -------
+        log: tuple[list[float], list[float], list[float]]
+            Values of training and validation loss, and validation accuracy
+            over epochs.
+    """
     with open(path, 'r') as text_file:
         log = text_file.readlines()
     train_loss, valid_loss, valid_acc = [], [], []
@@ -353,6 +379,23 @@ def parse_log(path):
     return train_loss, valid_loss, valid_acc
 
 def split_dataset(path, train_size=0.6):
+    """
+        Split dataset and generate split values.
+
+        Parameters
+        ----------
+        path: os.path
+            Dataset path.
+        train_size: float
+            Ratio of data to go to the train set, valid and test are split
+            equally.
+
+        Returns
+        -------
+        splits: list[list[str]].
+            List of lists which contain names of recordings that belong to the
+            split.
+    """
     diagnostics = load_diagnostics(path)
     recording_paths = diagnostics['FileName']
     rhythms = diagnostics['Rhythm']
@@ -367,15 +410,24 @@ def split_dataset(path, train_size=0.6):
                                                         stratify=y_validtest)
     return x_train, x_valid, x_test, y_train, y_valid, y_test
 
-def get_class_counts(path):
+def get_class_counts(path, ordered=False):
     diagnostics = load_diagnostics(path)
     recording_paths = diagnostics['FileName']
     rhythms = diagnostics['Rhythm']
     return Counter(rhythms)
 
+def feature_parameters(path):
+    diagnostics = load_diagnostics(path)
+    features = diagnostics[feature_columns]
+    description = features.describe()
+    for column in description:
+        print(description[column])
+        print()
+
 
 if __name__ == '__main__':
     dataset_path = os.path.join('dataset', '12lead', 'ECGData')
+    feature_parameters(os.path.join('dataset', '12lead'))
     rec = load_recording(os.path.join(dataset_path, 'MUSE_20180111_155115_19000.csv'), 4)
     print(rec.shape, rec)
     diagnostics = load_diagnostics(os.path.join('dataset', '12lead'))
