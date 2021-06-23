@@ -129,12 +129,34 @@ def evaluate():
     print('Weighted: ', weighted)
     print('Accuracy: ', accuracy)
 
+def demo():
+    examples = 10
+    print('Loading data')
+    iterators, datasets = data_loaders(1)
+    test_it = iterators[2]
+    dataset = datasets[0]
+    model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
+            dataset.get_class_weights())
+    print('Loading model')
+    model.load_state_dict(load(join(dir, model_name + '.pt')))
+
+    i = 0
+    for batch in test_it:
+        X, y = batch
+        print('Classifying example {}'.format(i))
+        y_p = model.classify(X).to(device='cpu')
+        for j in range(y_p.size()[1]):
+            print('{}: {:.3f}%'.format(j, y_p[:, j].item()*100))
+        print('\nCorrect class: {}\n\n'.format(y.item()))
+        i = i + 1
+        if i > examples:
+            break
 
 
 def main():
     #print('Cuda available: ', is_available())
     #train()
-    evaluate()
-
+    #evaluate()
+    demo()
 if __name__ == '__main__':
     main()

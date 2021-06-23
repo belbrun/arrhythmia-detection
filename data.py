@@ -288,6 +288,8 @@ def data_loaders(batch_size, shuffle=True, ratios=[0.6, 0.2, 0.2]):
             Batch size.
         shuffle: bool
             Flag to determine if the data is shuffled before spliting.
+        ratios: list[float]
+            Ratios to split the datasets in.
 
         Returns
         -------
