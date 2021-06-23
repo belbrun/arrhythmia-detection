@@ -11,23 +11,65 @@ import torch
 import numpy as np
 
 
-
+# use GPU for training if available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Baseline:
+    """
+        Baseline model class.
+        Wrap svm.SVC in a structure that fits custom model interface.
 
+        Atributes
+        ---------
+        kernel: str
+            Specifies the kernel of the SVM.
+        n_features: int
+            Specifies number of features used in the model.
+        use_preprocessing: bool
+            Flag to determine weather to use preprocessing.
+    """
     def __init__(self, kernel, n_features, use_preprocessing=True):
         self.svm = SVC(class_weight='balanced', kernel=kernel)
         self.n_features = n_features
         self.use_preprocessing = use_preprocessing
 
     def preprocess(self, X, y):
+        """
+            Prepares input data for the SVM.
+            Filters beats to length of number of features of the SVM and padds
+            them.
+
+            Parameters
+            ----------
+            X: list[numpy.ndarray]
+                List of examples.
+            y: list[str]
+                List of annotaton symbols.
+
+            Returns
+            -------
+            X: numpy.ndarray
+                Examples prepared for SVM.
+            y: np.ndarray
+                Annotation values.
+        """
         X, y = filter_beats(X, y, self.n_features)
         #X = denoise(X)
         return pad_beats(X, self.n_features), map_annotations(y)
 
     def fit(self, X, y):
+        """
+            Fits SVM to data.
+
+            Parameters
+            -------
+            X: list[numpy.ndarray]
+                List of examples.
+            y: list[str]
+                List of annotaton symbols.
+
+        """
         print('preparing')
         if self.use_preprocessing:
             X, y = self.preprocess(X, y)
@@ -37,6 +79,16 @@ class Baseline:
 
 
     def test(self, X, y):
+        """
+        Tests the SVM model and print a classification report.
+
+        Parameters
+        -------
+        X: list[numpy.ndarray]
+            List of examples.
+        y: list[str]
+            List of annotaton symbols.
+        """
         if self.use_preprocessing:
             X, y = self.preprocess(X, y)
         print('scoring')
@@ -44,6 +96,45 @@ class Baseline:
 
 
 class RNN(nn.Module):
+
+    """
+        Models an RNN model as nn.Module.
+
+        Atributes
+        ---------
+        input_size: int
+            Size of input features of each element of the sequence.
+        hidden_size: int
+            Size of RNNs hidden state.
+        num_layes: int
+            Number of RNN layers.
+        dropout: float
+            Dropout value.
+        n_classes: int
+            Number of classes.
+        weight: numpy.ndarray
+            Class weights.
+        rnn: nn.Module
+            RNN.
+        fc1: nn.Module
+            First fully connected layer.
+        fc2: nn.Module
+            Second fully connected layer.
+        activation: nn.Function
+            Activation function.
+        loss: nn.Function
+            Loss function.
+        precision: ignite.Metric
+            Precision metric.
+        recall: ignite.Metric
+            Recall metric.
+        f1: ignite.Metric
+            F1 metric.
+        accuracy: ignite.Metric
+            Accuracy metric.
+        metrics: list[Metric]
+            List of all contained metrics.
+    """
 
     def __init__(self, input_size, hidden_size, num_layers, dropout, n_classes,
                  weight):
@@ -67,6 +158,19 @@ class RNN(nn.Module):
         self.to(device)
 
     def forward(self, x):
+        """
+            Forward pass thru the model.
+
+            Parameters
+            ----------
+            x: torch.Tensor
+                Input batch of examples.
+
+            Returns
+            -------
+            x: torch.Tensor
+                Output values for the input batch (not class probabilities).
+        """
         batch_size = x.size()[1]
         #_, (h, _) = self.rnn(x)
         _, h = self.rnn(x)
@@ -77,6 +181,21 @@ class RNN(nn.Module):
         return x
 
     def train_model(self, batch, optimizer):
+        """
+            Execute training procedure for one batch.
+
+            Parameters
+            ----------
+            batch: tuple(torch.Tensor, torch.Tensor)
+                Input batch.
+            optimizer: nn.Optimizer
+                Optimizer.
+
+            Returns
+            -------
+            loss: float
+                Loss of the model for the input batch.
+        """
 
         self.train()
         self.zero_grad()
@@ -93,10 +212,35 @@ class RNN(nn.Module):
         return loss.to('cpu').detach().item()
 
     def classify(self, x):
+        """
+            Forward pass thru the model with softmax layer at the end.
+
+            Parameters
+            ----------
+            x: torch.Tensor
+                Input batch of examples.
+
+            Returns
+            -------
+            x: torch.Tensor
+                Class probabilities for the input batch.
+        """
         return self.softmax(self(x))
 
     def evaluate_model(self, batch):
+        """
+            Execute evaluation procedure for one batch.
 
+            Parameters
+            ----------
+            batch: tuple(torch.Tensor, torch.Tensor)
+                Input batch.
+
+            Returns
+            -------
+            loss: float
+                Loss of the model for the input batch.
+        """
         self.eval()
 
         x, y = batch
@@ -106,6 +250,20 @@ class RNN(nn.Module):
         return loss.to('cpu').detach().item()
 
     def measure(self, dataloader):
+        """
+            Measure the models performance with defined metrics on a dataset.
+
+            Parameters
+            ----------
+            dataloadet: torch.DataLoader
+                Iterator over a dataset.
+
+            Returns
+            -------
+            metrics: list[torch.Tensor]
+                List of defined metrics values for every class
+                (accuracy is averaged).
+        """
         for metric in self.metrics:
             metric.reset()
         for batch in dataloader:

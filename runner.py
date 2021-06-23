@@ -9,7 +9,26 @@ from collections import Counter
 
 
 def train_procedure(model, iterators, n_epochs, optimizer):
+    """
+        Exceute a training procedure to yield the best model and keeps a log.
 
+        Parameters
+        ----------
+        model: RNN
+            Model to train.
+        iterators: list[DataLoader]
+            Train, validation and test dataset iterators.
+        n_epochs: int
+            Number of epochs.
+        optimizer: nn.Optimizer
+            Model optimizer.
+
+        Returns:
+        best_model: RNN
+            Model with highest validation accuracy value.
+        log: list[str]
+            Training procedure data.
+    """
     log = [str(model.state_dict), str(optimizer),
            'Start time: ' + str(datetime.now())]
     train_it, valid_it, test_it = iterators
@@ -45,13 +64,16 @@ def train_procedure(model, iterators, n_epochs, optimizer):
     log.append('Testing: {}'.format(epoch_loss/(len(test_it)*test_it.batch_size)))
 
     log.append('Test accuracy: {}'.format(model.measure(test_it)))
-    print(log[-2] + '\n' + log[-1])"""
+    print(log[-2] + '\n' + log[-1])
 
     return best_model, log
 
+
+# paths
 model_name = 'model2long'
 dir = 'state_dicts'
 
+# hyperparameters
 input_size = 2
 hidden_size = 128
 num_layers = 2
@@ -62,6 +84,10 @@ batch_size = 4
 n_epochs = 100
 
 def train():
+    """
+        Load data, define the model and the optimizer, train the model and
+        save the models state dictionary and training procedure log.
+    """
     iterators, datasets = data_loaders(batch_size)
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
                 dataset.get_class_weights())
@@ -72,17 +98,28 @@ def train():
     save_log(log, join(dir, 'log' + model_name[4:]))
 
 def evaluate():
+    """
+        Load data, load the model, and measure its performance on the test set.
+        Calculate and print macro and weighted averages of the yielded metrics.
+    """
+
     iterators, datasets = data_loaders(batch_size)
     dataset = datasets[0]
     model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
                 dataset.get_class_weights())
     model.load_state_dict(load(join(dir, model_name + '.pt')))
     print(model.state_dict)
+
     precision, recall, f1, accuracy = model.measure(iterators[2])
+
+    # calculate macro averages
+    macros = [x.sum()/x.size()[0] for x in [precision, recall, f1]]
+
+    print('Macros: ', macros)
+
+    # calculate weighted averages
     counts = list(Counter(datasets[2].annotations).values())
     overall = sum(counts)
-    macros = [x.sum()/x.size()[0] for x in [precision, recall, f1]]
-    print('Macros: ', macros)
     weighted = []
     for metric in [precision, recall, f1]:
         value = 0
