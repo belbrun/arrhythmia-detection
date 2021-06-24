@@ -2,7 +2,6 @@ from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from ignite.metrics.confusion_matrix import ConfusionMatrix #import ClassificationReport
-from torchmetrics import Accuracy
 from ignite.metrics import Fbeta, Accuracy
 from ignite.metrics.precision import Precision
 from ignite.metrics.recall import Recall
@@ -15,7 +14,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Baseline:
-     """
+    """
         Baseline model class.
         Wrap svm.SVC in a structure that fits custom model interface.
 

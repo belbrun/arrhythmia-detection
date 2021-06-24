@@ -11,29 +11,27 @@ import numpy as np
 
 
 def train_procedure(model, iterators, n_epochs, optimizer):
-     """
-        Exceute a training procedure to yield the best model and keeps a log.
-
-        Parameters
-        ----------
-        model: RNN
-            Model to train.
-        iterators: list[DataLoader]
-            Train, validation and test dataset iterators.
-        n_epochs: int
-            Number of epochs.
-        optimizer: nn.Optimizer
-            Model optimizer.
-
-        Returns:
-        best_model: RNN
-            Model with highest validation accuracy value.
-        log: list[str]
-            Training procedure data.
     """
+       Exceute a training procedure to yield the best model and keeps a log.
 
-    log = [str(model.state_dict), str(optimizer),
-           'Start time: ' + str(datetime.now())]
+       Parameters
+       ----------
+       model: RNN
+           Model to train.
+       iterators: list[DataLoader]
+           Train, validation and test dataset iterators.
+       n_epochs: int
+           Number of epochs.
+       optimizer: nn.Optimizer
+           Model optimizer.
+
+       Returns:
+       best_model: RNN
+           Model with highest validation accuracy value.
+       log: list[str]
+           Training procedure data.
+   """
+    log = [str(model.state_dict), str(optimizer), 'Start time: ' + str(datetime.now())]
     train_it, valid_it, test_it = iterators
     max_accuracy = 0
     for i in range(n_epochs):
@@ -42,14 +40,14 @@ def train_procedure(model, iterators, n_epochs, optimizer):
         for batch in train_it:
             loss = model.train_model(batch, optimizer)
             epoch_loss += loss
-        log.append('Epoch {} - train: {}'.format(i, epoch_loss/(len(train_it)*train_it.batch_size)))
+        log.append('Epoch {} - train: {}'.format(i, epoch_loss / (len(train_it) * train_it.batch_size)))
         print(log[-1])
 
         epoch_loss = 0
         for batch in valid_it:
             loss = model.evaluate_model(batch)
             epoch_loss += loss
-        log.append('Epoch {} - validation: {}'.format(i, epoch_loss/(len(valid_it)*valid_it.batch_size)))
+        log.append('Epoch {} - validation: {}'.format(i, epoch_loss / (len(valid_it) * valid_it.batch_size)))
         accuracy = model.measure(valid_it)
         if accuracy > max_accuracy:
             max_accuracy = accuracy
@@ -58,18 +56,18 @@ def train_procedure(model, iterators, n_epochs, optimizer):
         print(log[-2] + '\n' + log[-1])
     log.append('End time: ' + str(datetime.now()))
 
-
     test_loss = 0
     for batch in test_it:
         print(batch)
         loss = model.evaluate_model(batch)
         test_loss += loss
-    log.append('Testing: {}'.format(epoch_loss/(len(test_it)*test_it.batch_size)))
+    log.append('Testing: {}'.format(epoch_loss / (len(test_it) * test_it.batch_size)))
 
     log.append('Test accuracy: {}'.format(model.measure(test_it)))
     print(log[-2] + '\n' + log[-1])
 
     return best_model, log
+
 
 
 def baseline():
@@ -98,7 +96,7 @@ def baseline():
     X = np.array(train.recordings)
     X = np.squeeze(X)
     f = train.features
-#    X_train = np.concatenate((X[:, :1000], f), axis=1)
+    #    X_train = np.concatenate((X[:, :1000], f), axis=1)
     X_train = train.features
     y_train = train.rhythms
 
@@ -111,7 +109,7 @@ def baseline():
     X = np.array(test.recordings)
     X = np.squeeze(X)
     f = test.features
-#    X_test = np.concatenate((X[:, :1000], f), axis=1)
+    #    X_test = np.concatenate((X[:, :1000], f), axis=1)
     X_test = test.features
     y_test = test.rhythms
 
@@ -142,7 +140,7 @@ def train():
         save the models state dictionary and training procedure log.
     """
     iterators, datasets = data_loaders(batch_size, denoised=denoised,
-                                      merged=merged)
+                                       merged=merged)
     class_weights = datasets[0].get_class_weights()
     model = RNN(input_size, hidden_size, num_layers, dropout,
                 len(class_weights), class_weights, n_features)
@@ -152,45 +150,67 @@ def train():
     save_log(log, join(dir, 'log' + model_name[4:] + '.txt'))
 
 def evaluate():
-     """
-        Load data, load the model, and measure its performance on the test set.
-        Calculate and print macro and weighted averages of the yielded metrics.
     """
-    iterators, datasets = data_loaders(batch_size, include=['test'],
-                                       denoised=denoised,
-                                      merged=merged)
-    class_weights = datasets[0].get_class_weights()
-    model = RNN(input_size, hidden_size, num_layers, dropout, len(class_weights),
-                class_weights, n_features)
+       Load data, load the model, and measure its performance on the test set.
+       Calculate and print macro and weighted averages of the yielded metrics.
+   """
+iterators, datasets = data_loaders(batch_size, include=['test'],
+                                   denoised=denoised,
+                                   merged=merged)
+class_weights = datasets[0].get_class_weights()
+model = RNN(input_size, hidden_size, num_layers, dropout, len(class_weights),
+            class_weights, n_features)
+model.load_state_dict(load(join(dir, model_name + '.pt')))
+print(model.state_dict)
+precision, recall, f1, accuracy = model.measure(iterators[0])
+c = Counter(datasets[0].rhythms)
+counts = np.empty(len(list(c.keys())))
+for key in c.keys():
+    counts[key] = c[key]
+print('Counts: ', counts)
+overall = counts.sum()
+macros = [x.sum()/x.size()[0] for x in [precision, recall, f1]]
+print('Macros: ', macros)
+weighted = []
+for metric in [precision, recall, f1]:
+    value = 0
+    for i in range(metric.size()[0]):
+        value += counts[i]/overall*metric[i]
+    weighted.append(value)
+print('Weighted: ', weighted)
+print('Accuracy: ', accuracy)
+
+def demo():
+    examples = 10
+    print('Loading data')
+    iterators, datasets = data_loaders(1)
+    test_it = iterators[2]
+    dataset = datasets[0]
+    model = RNN(input_size, hidden_size, num_layers, dropout, n_classes,
+                dataset.get_class_weights(), n_features)
+    print('Loading model')
     model.load_state_dict(load(join(dir, model_name + '.pt')))
-    print(model.state_dict)
-    precision, recall, f1, accuracy = model.measure(iterators[0])
-    c = Counter(datasets[0].rhythms)
-    counts = np.empty(len(list(c.keys())))
-    for key in c.keys():
-        counts[key] = c[key]
-    print('Counts: ', counts)
-    overall = counts.sum()
-    macros = [x.sum()/x.size()[0] for x in [precision, recall, f1]]
-    print('Macros: ', macros)
-    weighted = []
-    for metric in [precision, recall, f1]:
-        value = 0
-        for i in range(metric.size()[0]):
-            value += counts[i]/overall*metric[i]
-        weighted.append(value)
-    print('Weighted: ', weighted)
-    print('Accuracy: ', accuracy)
 
-
+    i = 0
+    for batch in test_it:
+        X, f, y = batch
+        print('Classifying example {}'.format(i))
+        y_p = model.classify(X, f).to(device='cpu')
+        for j in range(y_p.size()[1]):
+            print('{}: {:.3f}%'.format(j, y_p[:, j].item()*100))
+        print('\nCorrect class: {}\n\n'.format(y.item()))
+        i = i + 1
+        if i > examples:
+            break
 
 
 
 def main():
-    baseline()
+    #baseline()
     #print('Cuda available: ', is_available())
     #train()
     #evaluate()
+    demo()
 
 if __name__ == '__main__':
     main()

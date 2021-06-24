@@ -1,8 +1,6 @@
 import os
-import wfdb
 import matplotlib.pyplot as plt
 import numpy as np
-import pywt
 import torch
 import pandas as pd
 from torch.nn.utils.rnn import pad_sequence
@@ -348,7 +346,7 @@ def save_log(log, path):
         text_file.write('\n'.join(log))
 
 def parse_log(path):
-     """
+    """
         Parses a log loaded from a path.
         Extracts values of training and validation loss, and validation accuracy
         over epochs.
